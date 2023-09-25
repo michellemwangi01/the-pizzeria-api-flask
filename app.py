@@ -137,7 +137,7 @@ api.add_resource(PizzaByID, '/pizzabyid/<int:id>')
 
 class RestaurantPizza(Resource):
 
-     def get(self):
+    def get(self):
         restaurant_pizzas = [
             restaurant_pizza.to_dict()
             for restaurant_pizza in Restaurant_pizzas.query.all()
