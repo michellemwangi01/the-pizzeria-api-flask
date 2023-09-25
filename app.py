@@ -137,6 +137,15 @@ api.add_resource(PizzaByID, '/pizzabyid/<int:id>')
 
 class RestaurantPizza(Resource):
 
+     def get(self):
+        restaurant_pizzas = [
+            restaurant_pizza.to_dict()
+            for restaurant_pizza in Restaurant_pizzas.query.all()
+        ]
+        response_body = {"restaurant_pizzas": restaurant_pizzas}
+
+        return make_response(response_body, 200)
+
     def post(self):
         new_restaurant_pizza = Restaurant_pizzas(
             price=int(request.form.get('price')),
