@@ -69,3 +69,5 @@ Add validations to Restaurant Model:
    - `flask db upgrade`
 4. Update db with tables:
    - `flask db revision --autogenerate -m'Create tables owners, pets'`
+5. Add requirements.txt file
+   - `pipenv run pip freeze > requirements.txt`
