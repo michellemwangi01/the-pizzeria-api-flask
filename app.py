@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from flask import Flask
+from flask_cors import CORS
 import secrets
 from flask_migrate import Migrate
 from flask import make_response, request, jsonify
@@ -19,6 +20,7 @@ api = Api(app)
 migrate = Migrate(app, db)
 db.init_app(app)
 
+CORS(app)
 
 class Home(Resource):
     def get(self):
