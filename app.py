@@ -4,7 +4,7 @@ import secrets
 from flask_migrate import Migrate
 from flask import make_response, request, jsonify
 from flask_restful import Resource, Api
-from models import Restaurant, Pizza, Restaurant_pizzas, db
+from server.models import Restaurant, Pizza, Restaurant_pizzas, db
 
 app = Flask(__name__)
 secret_key = secrets.token_hex(16)

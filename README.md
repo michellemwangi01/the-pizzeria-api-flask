@@ -2,7 +2,7 @@
 
 ### Flask Code Challenge - Pizza Restaurants
 
-![La Pizzeria](image.png)
+![La Pizzeria](images/image.png)
 This is a project creating a FLASK API for a Pizza Restaurant domain.
 
 Running the Flask server and using Postman to make requests
@@ -12,7 +12,7 @@ Models. You need to create the following relationships:
 - A Pizza has many Restaurants through RestaurantPizza
 - A RestaurantPizza belongs to a Restaurant and belongs to a Pizza
 
-![img.png](img.png)
+![img.png](images/img.png)
 
 ### Validations
 
