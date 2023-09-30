@@ -20,3 +20,4 @@ SQLAlchemy-serializer==1.4.1
 typing_extensions==4.7.1
 Werkzeug==2.2.3
 Flask-Cors==3.0.10
+flask-restx==0.10.3
