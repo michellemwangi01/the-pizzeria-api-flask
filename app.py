@@ -4,7 +4,7 @@ from flask_cors import CORS
 import secrets
 from flask_migrate import Migrate
 from flask import make_response, request, jsonify
-from flask_restful import Resource, Api
+from flask_restx import Resource, Api, Namespace, fields
 from server.models import Restaurant, Pizza, Restaurant_pizzas, db
 
 app = Flask(__name__)
@@ -16,12 +16,48 @@ app.json.compact = False
 
 
 api = Api(app)
+ns = Namespace("api")
+api.add_namespace(ns)
 
 migrate = Migrate(app, db)
 db.init_app(app)
 
 CORS(app)
 
+
+# ----------------------- A P I _ M O D E L S -----------------------
+restaurant_model = api.model("Restautant",{
+    "id": fields.Integer,
+    "name": fields.String,
+    "address": fields.String
+})
+pizzas_model = api.model("Pizza",{
+    "id": fields.Integer,
+    "name": fields.String,
+    "ingredients": fields.String,
+    "image":fields.String
+})
+restaurant_pizzas_model = api.model("RestaurantPizza",{
+    "id": fields.Integer,
+    "price": fields.Integer,
+    "restaurant": fields.Nested(restaurant_model),
+    "pizza": fields.Nested(pizzas_model)
+
+})
+restaurant_pizzas_input_model = api.model("RestaurantPizzaInput",{
+    "restaurant_id": fields.Integer,
+    "price": fields.Integer,
+    "pizza_id": fields.Integer
+})
+restaurant_input_model = api.model("RestaurantInput",{
+    "name": fields.String,
+    "address": fields.String
+})
+
+
+
+
+@ns.route("/")
 class Home(Resource):
     def get(self):
         response_message = {
@@ -30,40 +66,27 @@ class Home(Resource):
         return make_response(response_message, 200)
 
 
-api.add_resource(Home, '/')
 
-
+@ns.route("/restaurants")
 class Restaurants(Resource):
+    @ns.marshal_list_with(restaurant_model) 
     def get(self):
-        restaurants_dicts = []
-        for restaurant in Restaurant.query.all():
-            dict_restaurant = {
-                "id": restaurant.id,
-                "name": restaurant.name,
-                "address": restaurant.address,
-                # "pizzas": restaurant.pizzas
-            }
-            restaurants_dicts.append(dict_restaurant)
-        response_body = {
-            "restaurants": restaurants_dicts
-        }
-        return make_response(jsonify(response_body), 200)
+        return Restaurant.query.all()
 
 
-api.add_resource(Restaurants, '/restaurants')
 
-
+@ns.route("/restaurantbyid/<int:id>")
 class RestaurantByID(Resource):
+    @ns.marshal_list_with(restaurant_model)
     def get(self, id):
         restaurant = Restaurant.query.filter_by(id=id).first()
         if restaurant:
             restaurant_dict = restaurant.to_dict()
-            response = make_response(restaurant_dict, 200)
+            response = restaurant_dict, 200
         else:
-            response_body = {
+            response = {
                 "error": "Restaurant not found"
-            }
-            response = make_response(response_body, 404)
+            },404
         return response
 
     def delete(self, id):
@@ -83,95 +106,75 @@ class RestaurantByID(Resource):
             response = make_response(response_body, 404)
         return response
 
+    @ns.expect(restaurant_input_model)
+    @ns.marshal_with(restaurant_model)
     def patch(self, id):
         restaurant = Restaurant.query.filter_by(id=id).first()
-        for attr in request.form:
-            setattr(restaurant, attr, request.form.get(attr))
+        for attr in ns.payload:
+            setattr(restaurant, attr, ns.payload[attr])
         db.session.add(restaurant)
         db.session.commit()
-        restaurant_dict = restaurant.to_dict()
-        return make_response(restaurant_dict, 200)
+        return restaurant ,200
 
 
-api.add_resource(RestaurantByID, '/restaurantbyid/<int:id>')
 
-
+@ns.route("/pizzas")
 class Pizzas(Resource):
-
+    @ns.marshal_list_with(pizzas_model) 
     def get(self):
-        pizzas_dicts = []
-        for pizza in Pizza.query.all():
-            dict_pizza = {
-                "id": pizza.id,
-                "name": pizza.name,
-                "ingredients": pizza.ingredients,
-                "image":pizza.image
-            }
-            # dict_pizza = pizza.to_dict()
-            pizzas_dicts.append(dict_pizza)
-            response_body = {
-                "pizzas":pizzas_dicts
-            }
-        return make_response(jsonify(response_body), 200)
+        # pizzas_dicts = []
+        # for pizza in Pizza.query.all():
+        #     dict_pizza = {
+        #         "id": pizza.id,
+        #         "name": pizza.name,
+        #         "ingredients": pizza.ingredients,
+        #         "image":pizza.image
+        #     }
+        #     # dict_pizza = pizza.to_dict()
+        #     pizzas_dicts.append(dict_pizza)
+        #     response_body = {
+        #         "pizzas":pizzas_dicts
+        #     }
+        return Pizza.query.all()
 
 
-api.add_resource(Pizzas, '/pizzas')
-
-
+@ns.route("/pizzabyid/<int:id>")
 class PizzaByID(Resource):
+    @ns.marshal_list_with(pizzas_model)
     def get(self, id):
         pizza = Pizza.query.filter_by(id=id).first()
         if pizza:
-            pizza_dict = pizza.to_dict()
-            response = make_response(pizza_dict, 200)
+            response = pizza, 200
         else:
             response_body = {
                 "error": "Pizza not found"
             }
-            response = make_response(response_body, 404)
+            response = response_body, 404
         return response
 
 
-api.add_resource(PizzaByID, '/pizzabyid/<int:id>')
 
-
+@ns.route("/restaurant_pizzas")
 class RestaurantPizza(Resource):
-
+    @ns.marshal_list_with(restaurant_pizzas_model)
     def get(self):
-        restaurant_pizzas = [
-            restaurant_pizza.to_dict()
-            for restaurant_pizza in Restaurant_pizzas.query.all()
-        ]
-        response_body = {"restaurant_pizzas": restaurant_pizzas}
-
-        return make_response(response_body, 200)
-
+        return Restaurant_pizzas.query.all()
+    
+    @ns.expect(restaurant_pizzas_input_model)
+    @ns.marshal_with(restaurant_pizzas_model)
     def post(self):
+        print(ns.payload)
         new_restaurant_pizza = Restaurant_pizzas(
-            price=int(request.form.get('price')),
-            pizza_id=request.form.get('pizza_id'),
-            restaurant_id=request.form.get('restaurant_id'),
+            price=int(ns.payload['price']),
+            pizza_id=ns.payload['pizza_id'],
+            restaurant_id=ns.payload['restaurant_id']
         )
-        try:
-            db.session.add(new_restaurant_pizza)
-            db.session.commit()
-            restaurant_pizza_dict = new_restaurant_pizza.to_dict()
-            response_body = {
-                "message": "Restaurant_pizza created for...",
-                "pizza": restaurant_pizza_dict['pizza'],
-                "restaurant": restaurant_pizza_dict['restaurant']
-            }
-            response = make_response(response_body, 200)
-        except Exception as e:
-            response_body = {
-                "Validation errors": f"An exception of type {type(e).__name__} occurred: {str(e)}"
-            }
-            response = make_response(response_body, 404)
-        finally:
-            return response
+        db.session.add(new_restaurant_pizza)
+        db.session.commit()
+        print(new_restaurant_pizza)
+        return new_restaurant_pizza,201
 
 
-api.add_resource(RestaurantPizza, '/restaurant_pizzas')
 
 
 if __name__ == '__main__':

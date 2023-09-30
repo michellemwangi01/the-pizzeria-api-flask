@@ -71,3 +71,12 @@ Add validations to Restaurant Model:
    - `flask db revision --autogenerate -m'Create tables owners, pets'`
 5. Add requirements.txt file
    - `pipenv run pip freeze > requirements.txt`
+6. Add items to requirements file
+   - `pip install 'dependency' e.g. gunicorn`
+   - `pip freeze> requirements.txt`
+7. Setup RESTX for documentation
+   - run `pip install flask-restx`
+   - from flask_restx import Resource, Api
+     - api = Api(app) # same way to initialize api but this time, it is coming from restx and not restful
+   - on the routes:
+     - from flask_restx import namespace
